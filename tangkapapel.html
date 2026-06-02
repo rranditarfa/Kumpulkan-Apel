@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Game Tangkap Apel Emoji</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #b2dfdb; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #gameCanvas { background: #e0f7fa; border: 4px solid #004d40; display: block; max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        #scoreBoard { position: absolute; top: 20px; left: 20px; font-size: 26px; font-weight: bold; color: #004d40; pointer-events: none; z-index: 10; background: rgba(255,255,255,0.7); padding: 5px 15px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="scoreBoard">Skor: 0</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreBoard = document.getElementById("scoreBoard");
+
+    // Pengaturan Game
+    let score = 0;
+    let gameOver = false;
+
+    // Keranjang 🧺
+    const basket = {
+        x: 160,
+        y: 520,
+        width: 80,
+        height: 50,
+        emoji: "🧺"
+    };
+
+    // Apel 🍎
+    const apple = {
+        x: Math.random() * (canvas.width - 40),
+        y: -20,
+        width: 40,
+        height: 40,
+        speed: 4,
+        emoji: "🍎"
+    };
+
+    // Kontrol Sentuh Tablet (Dioptimalkan agar responsif)
+    function handleTouch(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const touchX = touch.clientX - rect.left;
+        
+        // Menyeimbangkan skala koordinat layar
+        const scaleX = canvas.width / rect.width;
+        basket.x = (touchX * scaleX) - basket.width / 2;
+
+        // Batasi gerakan di dalam layar
+        if (basket.x < 0) basket.x = 0;
+        if (basket.x > canvas.width - basket.width) basket.x = canvas.width - basket.width;
+    }
+
+    canvas.addEventListener("touchstart", handleTouch, { passive: false });
+    canvas.addEventListener("touchmove", handleTouch, { passive: false });
+
+    // Update Logika Game
+    function update() {
+        if (gameOver) return;
+
+        // Apel jatuh ke bawah
+        apple.y += apple.speed;
+
+        // Jika apel lolos (Game Over)
+        if (apple.y > canvas.height) {
+            gameOver = true;
+            alert("Game Over! Skor Anda: " + score);
+            document.location.reload();
+        }
+
+        // Deteksi Tabrakan Kotak (Apel Masuk Keranjang)
+        if (apple.y + apple.height >= basket.y && 
+            apple.x + apple.width >= basket.x && 
+            apple.x <= basket.x + basket.width) {
+            
+            score += 1;
+            scoreBoard.innerText = "Skor: " + score;
+            
+            // Reset posisi apel ke atas langit
+            apple.y = -20;
+            apple.x = Math.random() * (canvas.width - apple.width);
+            apple.speed += 0.4; // Menambah tantangan kecepatan
+        }
+    }
+
+    // Menggambar Grafik Game
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Gambar Background Rumput/Tanah Bawah
+        ctx.fillStyle = "#8d6e63";
+        ctx.fillRect(0, 560, canvas.width, 40);
+        ctx.fillStyle = "#4caf50";
+        ctx.fillRect(0, 550, canvas.width, 10);
+
+        // Gambar Apel 🍎 (Menggunakan Teks Emoji)
+        ctx.font = "40px sans-serif";
+        ctx.textBaseline = "top";
+        ctx.fillText(apple.emoji, apple.x, apple.y);
+
+        // Gambar Keranjang 🧺 (Menggunakan Teks Emoji)
+        ctx.font = "70px sans-serif";
+        ctx.fillText(basket.emoji, basket.x, basket.y);
+    }
+
+    // Game Loop Utama
+    function gameLoop() {
+        update();
+        draw();
+        if (!gameOver) {
+            requestAnimationFrame(gameLoop);
+        }
+    }
+
+    // Langsung mulai tanpa menunggu loading gambar eksternal
+    gameLoop();
+</script>
+</body>
+</html>
